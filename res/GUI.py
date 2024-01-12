@@ -1,3 +1,4 @@
+import json
 from typing import Any, Dict, List
 from PySide6.QtCore import (
     QCoreApplication,
@@ -37,13 +38,15 @@ from PySide6.QtWidgets import (
     QGridLayout,
     QLabel,
     QLineEdit,
+    QListWidget,
+    QListWidgetItem,
     QMainWindow,
     QSizePolicy,
     QSpacerItem,
     QStatusBar,
     QWidget,
 )
-
+from Function import Search
 
 class Initializer:
     def __init__(self) -> None:
@@ -53,7 +56,7 @@ class Initializer:
         self.instances[instance_name] = instance
 
     def get_instance(self, instance_name: str) -> object:
-        return self.instances.get(instance_name)
+        return self.instances.get(instance_name, None)
 
 
 ################################################################################
@@ -87,6 +90,7 @@ class Main_Container(QWidget):
         self.init.register("Main_Container", self)
         
         self.Search_Panel = Search_Panel(INIT)
+        self.search_results_panel: QListWidget = Search_Results_Panel(INIT)
         self.setup()
 
     def setup(self) -> None:
@@ -94,6 +98,7 @@ class Main_Container(QWidget):
         self.gridLayout = QGridLayout(self)
         self.gridLayout.setObjectName("gridLayout")
         self.gridLayout.addWidget(self.Search_Panel, 0, 0, 1, 1)
+        self.gridLayout.addWidget(self.search_results_panel, 1, 0, 1, 1)
 
 class Search_Panel(QFrame):
     def __init__(self, init: Initializer) -> None:
@@ -146,6 +151,7 @@ class Search_Bar(QLineEdit):
         self.init = init
         self.init.register("Search_Bar", self)
         self.setup()
+        self.signals()
 
     def setup(self) -> None:
         self.setObjectName(u"SearchBar")
@@ -156,6 +162,10 @@ class Search_Bar(QLineEdit):
         self.setSizePolicy(sizePolicy1)
         self.setMinimumSize(QSize(400, 50))
         self.setPlaceholderText("Search For Manga...")
+    
+    def signals(self) -> None:
+        self.returnPressed.connect(lambda : Search(self.text(), INIT))
+
 
 class Welcome_Home_Label(QLabel):
     def __init__(self, init: Initializer) -> None:
@@ -164,7 +174,6 @@ class Welcome_Home_Label(QLabel):
         self.init.register("Welcome_Home_Label", self)
 
         self.setup()
-        self.signals()
     def setup(self) -> None:
         self.setObjectName(u"Welcome_Header")
         sizePolicy2 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
@@ -182,5 +191,45 @@ class Welcome_Home_Label(QLabel):
         self.setAlignment(Qt.AlignCenter)
         self.setText("Welcome To Manga Library")
 
-    def signals(self) -> None:
-        self.returnPressed()
+class Search_Results_Panel(QFrame):
+    def __init__(self, init: Initializer) -> None:
+        super().__init__()  
+        self.init = init
+        self.init.register("Search_Results_Panel", self)
+        self.search_results: QListWidget = Search_Results(INIT)
+        self.setup()
+        self.hide()
+
+    def setup(self):
+        if not self.objectName():
+            self.setObjectName(u"Search_Results_Panel")
+        self.gridLayout = QGridLayout(self)
+        self.gridLayout.setObjectName(u"gridLayout")
+        self.search_label = QLabel(self)
+        self.search_label.setObjectName(u"search_label")
+        sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.search_label.sizePolicy().hasHeightForWidth())
+        self.search_label.setSizePolicy(sizePolicy)
+        self.search_label.setMinimumSize(QSize(100, 0))
+        font = QFont()
+        font.setFamilies([u"Yrsa"])
+        font.setPointSize(25)
+        font.setBold(True)
+        font.setItalic(True)
+        self.search_label.setFont(font)
+        self.search_label.setText("Search")
+
+        self.gridLayout.addWidget(self.search_label, 0, 1, 1, 1)
+        self.gridLayout.addWidget(self.search_results,1, 0, 1, 6)
+
+class Search_Results(QListWidget):
+    def __init__(self, init: Initializer) -> None:
+        super().__init__()  
+        self.init = init
+        self.init.register("Search_Results", self)
+        self.setup()
+
+    def setup(self):
+        self.setObjectName(u"Search_Results")
